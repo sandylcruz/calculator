@@ -1,4 +1,4 @@
-import calculate from '../stringCalculator';
+import calculate from '../';
 
 describe('calculate works with valid inputs', () => {
   it('returns the correct value when passed the simplest expression', () => {

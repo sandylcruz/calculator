@@ -132,7 +132,7 @@ const generateTokenForExpression = (string: string): Array<Token> => {
 
 // This is an implementation of the Shunting-Yard algorithm.
 const transformTokensToReversePolishNotation = (
-  tokenArray: Array<Token>
+  tokenArray: Array<Token>,
 ): Array<NumberOrBinaryOperationToken> => {
   const stack: Array<BinaryOperationToken | OpeningParenthesis> = [];
   const output: NumberOrBinaryOperationToken[] = [];
@@ -210,7 +210,7 @@ const performOperation = (currentElement, leftElement, rightElement, stack) => {
 };
 
 const evaluateReversePolishNotation = (
-  array: Array<Exclude<Token, OpeningParenthesis | ClosingParenthesis>>
+  array: Array<Exclude<Token, OpeningParenthesis | ClosingParenthesis>>,
 ) => {
   const stack: Array<number> = [];
 

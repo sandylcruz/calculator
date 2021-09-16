@@ -3,6 +3,6 @@ set -e
 
 echo "About to perform eslint run"
 
-yarn eslint
+yarn eslint:ci
 
 echo "ESLint was a success"
