@@ -26,16 +26,22 @@ type Token =
   | OpeningParenthesis
   | ClosingParenthesis;
 
-const operators = new Set(['+', '-', '*', '/']);
+const OPERATORS = new Set(['+', '-', '*', '/']);
+
 const operatorPrecedence = {
   '*': 2,
   '/': 2,
   '+': 1,
   '-': 1,
 };
-const validCharacters = new Set(['+', '/', '-', '*', '.', '(', ')']);
 
-const isOperator = (element: string) => operators.has(element);
+const VALID_CHARACTERS = new Set(['+', '/', '-', '*', '.', '(', ')']);
+
+for (let i = 0; i < 10; i++) {
+  VALID_CHARACTERS.add(String(i));
+}
+
+const isOperator = (element: string) => OPERATORS.has(element);
 const isNumber = (element: string) => /^-?\d+$/.test(element);
 
 const hasConsecutiveOperators = (string: string): boolean => {
@@ -51,25 +57,12 @@ const hasConsecutiveOperators = (string: string): boolean => {
   return false;
 };
 
-const eliminateSpaces = (string: string): string =>
-  string.replace(/\s/g, '').split('').join('');
+const eliminateSpaces = (string: string): string => string.replace(/\s/g, '');
 
-const hasValidCharacters = (string: string): boolean => {
-  for (let i = 0; i < 10; i++) {
-    validCharacters.add(String(i));
-  }
+const hasValidCharacters = (string: string): boolean =>
+  string.split('').every((character) => VALID_CHARACTERS.has(character));
 
-  for (let i = 0; i < string.length; i++) {
-    const currentChar = string[i];
-    if (!validCharacters.has(currentChar)) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
-const tokenGenerator = (string: string): Array<Token> => {
+const generateTokenForExpression = (string: string): Array<Token> => {
   const trimmedString = eliminateSpaces(string);
 
   if (!hasValidCharacters(trimmedString)) throw 'Invalid input';
@@ -79,6 +72,19 @@ const tokenGenerator = (string: string): Array<Token> => {
 
   let numberAccumulator = '';
   let numberIsNegative = false;
+
+  const generateNumberToken = (value: string): NumberToken => ({
+    type: 'NumberToken',
+    value: numberIsNegative
+      ? Number(numberAccumulator) * -1
+      : Number(numberAccumulator),
+  });
+
+  const addNumberToken = (token: NumberToken) => {
+    tokenArray.push(token);
+    numberAccumulator = '';
+    numberIsNegative = false;
+  };
 
   for (let i = 0; i < trimmedString.length; i++) {
     const current = trimmedString[i];
@@ -90,15 +96,8 @@ const tokenGenerator = (string: string): Array<Token> => {
       numberIsNegative = true;
     } else if (isOperator(current)) {
       if (numberAccumulator !== '') {
-        const token = {
-          type: 'NumberToken',
-          value: numberIsNegative
-            ? Number(numberAccumulator) * -1
-            : Number(numberAccumulator),
-        };
-        tokenArray.push(token);
-        numberAccumulator = '';
-        numberIsNegative = false;
+        const token = generateNumberToken(numberAccumulator);
+        addNumberToken(token);
       }
       if (current === '-' && isOperator(previous)) {
         numberIsNegative = true;
@@ -114,35 +113,25 @@ const tokenGenerator = (string: string): Array<Token> => {
         value: '(',
       });
     } else if (isNumber(current) || current === ')') {
-      const token: NumberToken = {
-        type: 'NumberToken',
-        value: numberIsNegative
-          ? Number(numberAccumulator) * -1
-          : Number(numberAccumulator),
-      };
-      tokenArray.push(token);
-      numberAccumulator = '';
-      numberIsNegative = false;
+      const token = generateNumberToken(numberAccumulator);
+      addNumberToken(token);
       tokenArray.push({
         type: 'ClosingParenthesis',
         value: ')',
       });
     }
   }
+
   if (numberAccumulator !== '') {
-    const token: NumberToken = {
-      type: 'NumberToken',
-      value: numberIsNegative
-        ? Number(numberAccumulator) * -1
-        : Number(numberAccumulator),
-    };
+    const token = generateNumberToken(numberAccumulator);
     tokenArray.push(token);
   }
 
   return tokenArray;
 };
 
-const shuntingYard = (
+// This is an implementation of the Shunting-Yard algorithm.
+const transformTokensToReversePolishNotation = (
   tokenArray: Array<Token>
 ): Array<NumberOrBinaryOperationToken> => {
   const stack: Array<BinaryOperationToken | OpeningParenthesis> = [];
@@ -208,7 +197,7 @@ const shuntingYard = (
   return output;
 };
 
-const calculateValue = (currentElement, leftElement, rightElement, stack) => {
+const performOperation = (currentElement, leftElement, rightElement, stack) => {
   if (currentElement.operation === '*') {
     stack.push(leftElement * rightElement);
   } else if (currentElement.operation === '/') {
@@ -220,7 +209,7 @@ const calculateValue = (currentElement, leftElement, rightElement, stack) => {
   }
 };
 
-const reversePolishNotation = (
+const evaluateReversePolishNotation = (
   array: Array<Exclude<Token, OpeningParenthesis | ClosingParenthesis>>
 ) => {
   const stack: Array<number> = [];
@@ -234,7 +223,7 @@ const reversePolishNotation = (
       const rightElement = stack.pop();
       const leftElement = stack.pop();
 
-      calculateValue(currentElement, leftElement, rightElement, stack);
+      performOperation(currentElement, leftElement, rightElement, stack);
     }
   }
 
@@ -242,9 +231,10 @@ const reversePolishNotation = (
 };
 
 const calculate = (string: string): number => {
-  const tokensArray = tokenGenerator(string);
-  const parsedArray = shuntingYard(tokensArray);
-  const result = reversePolishNotation(parsedArray);
+  const tokenizedExpression = generateTokenForExpression(string);
+  const reversePolishNotationExpression =
+    transformTokensToReversePolishNotation(tokenizedExpression);
+  const result = evaluateReversePolishNotation(reversePolishNotationExpression);
   return Number(result);
 };
 
