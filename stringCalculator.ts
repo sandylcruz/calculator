@@ -3,8 +3,8 @@ interface BinaryOperationToken {
   operation: '+' | '-' | '*' | '/';
 }
 
-interface ClosingParenthesesToken {
-  type: 'ClosingParenthesesToken';
+interface ClosingParenthesis {
+  type: 'ClosingParenthesis';
   value: ')';
 }
 
@@ -13,8 +13,8 @@ interface NumberToken {
   value: number;
 }
 
-interface OpeningParenthesesToken {
-  type: 'OpeningParenthesesToken';
+interface OpeningParenthesis {
+  type: 'OpeningParenthesis';
   value: '(';
 }
 
@@ -23,8 +23,8 @@ type NumberOrBinaryOperationToken = NumberToken | BinaryOperationToken;
 type Token =
   | BinaryOperationToken
   | NumberToken
-  | OpeningParenthesesToken
-  | ClosingParenthesesToken;
+  | OpeningParenthesis
+  | ClosingParenthesis;
 
 const operators = new Set(['+', '-', '*', '/']);
 const operatorPrecedence = {
@@ -110,7 +110,7 @@ const tokenGenerator = (string: string): Array<Token> => {
       }
     } else if (current === '(') {
       tokenArray.push({
-        type: 'OpeningParenthesesToken',
+        type: 'OpeningParenthesis',
         value: '(',
       });
     } else if (isNumber(current) || current === ')') {
@@ -124,7 +124,7 @@ const tokenGenerator = (string: string): Array<Token> => {
       numberAccumulator = '';
       numberIsNegative = false;
       tokenArray.push({
-        type: 'ClosingParenthesesToken',
+        type: 'ClosingParenthesis',
         value: ')',
       });
     }
@@ -145,7 +145,7 @@ const tokenGenerator = (string: string): Array<Token> => {
 const shuntingYard = (
   tokenArray: Array<Token>
 ): Array<NumberOrBinaryOperationToken> => {
-  const stack: Array<BinaryOperationToken | OpeningParenthesesToken> = [];
+  const stack: Array<BinaryOperationToken | OpeningParenthesis> = [];
   const output: NumberOrBinaryOperationToken[] = [];
 
   for (let i = 0; i < tokenArray.length; i++) {
@@ -174,7 +174,7 @@ const shuntingYard = (
       } else {
         while (
           stack.length &&
-          stack[stack.length - 1].type !== 'OpeningParenthesesToken'
+          stack[stack.length - 1].type !== 'OpeningParenthesis'
         ) {
           const element = stack.pop();
           // @ts-expect-error Given the above, we know for sure that this is not an opening parenthesis.
@@ -182,7 +182,7 @@ const shuntingYard = (
         }
         stack.push(currentElement);
       }
-    } else if (currentElement.type === 'OpeningParenthesesToken') {
+    } else if (currentElement.type === 'OpeningParenthesis') {
       stack.push(currentElement);
     } else {
       let removedElement = stack.pop();
@@ -191,7 +191,7 @@ const shuntingYard = (
         throw new Error('Invalid parentheses');
       }
 
-      while (removedElement.type !== 'OpeningParenthesesToken') {
+      while (removedElement.type !== 'OpeningParenthesis') {
         output.push(removedElement);
         removedElement = stack.pop();
       }
@@ -200,7 +200,7 @@ const shuntingYard = (
   const stackLength = stack.length;
   for (let j = 0; j < stackLength; j++) {
     const element = stack.pop();
-    if (element.type !== 'OpeningParenthesesToken') {
+    if (element.type !== 'OpeningParenthesis') {
       output.push(element);
     }
   }
@@ -208,10 +208,20 @@ const shuntingYard = (
   return output;
 };
 
+const calculateValue = (currentElement, leftElement, rightElement, stack) => {
+  if (currentElement.operation === '*') {
+    stack.push(leftElement * rightElement);
+  } else if (currentElement.operation === '/') {
+    stack.push(leftElement / rightElement);
+  } else if (currentElement.operation === '+') {
+    stack.push(leftElement + rightElement);
+  } else {
+    stack.push(leftElement - rightElement);
+  }
+};
+
 const reversePolishNotation = (
-  array: Array<
-    Exclude<Token, OpeningParenthesesToken | ClosingParenthesesToken>
-  >
+  array: Array<Exclude<Token, OpeningParenthesis | ClosingParenthesis>>
 ) => {
   const stack: Array<number> = [];
 
@@ -224,15 +234,7 @@ const reversePolishNotation = (
       const rightElement = stack.pop();
       const leftElement = stack.pop();
 
-      if (currentElement.operation === '*') {
-        stack.push(leftElement * rightElement);
-      } else if (currentElement.operation === '/') {
-        stack.push(leftElement / rightElement);
-      } else if (currentElement.operation === '+') {
-        stack.push(leftElement + rightElement);
-      } else {
-        stack.push(leftElement - rightElement);
-      }
+      calculateValue(currentElement, leftElement, rightElement, stack);
     }
   }
 
