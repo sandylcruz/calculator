@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "./bin",
+    "rootDir": "./src"
+  },
+  "includes": ["./src"]
+}

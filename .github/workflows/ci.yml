@@ -1,0 +1,46 @@
+name: continuous-integration
+on: push
+
+jobs:
+  eslint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup code
+        uses: 'actions/setup-node@v2'
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        run: yarn install
+      - name: ESLint
+        run: ./scripts/ci/eslint.sh
+  jest:
+    name: Jest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup code
+        uses: 'actions/setup-node@v2'
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        run: yarn install
+      - name: Jest
+        run: ./scripts/ci/jest.sh
+  typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup code
+        uses: 'actions/setup-node@v2'
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        run: yarn install
+      - name: TypeScript
+        run: ./scripts/ci/typescript.sh
