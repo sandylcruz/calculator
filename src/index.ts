@@ -38,12 +38,14 @@ const operatorPrecedence = {
 const VALID_CHARACTERS = new Set(['+', '/', '-', '*', '.', '(', ')']);
 
 for (let i = 0; i < 10; i++) {
+  // dynamically generate the numbers 0-9 and add it to VALID_CHARACTERS to conserve space
   VALID_CHARACTERS.add(String(i));
 }
 
 const isOperator = (element: string) => OPERATORS.has(element);
 const isNumber = (element: string) => /^-?\d+$/.test(element);
 
+// This function is important to determine if two consecutive operators are valid (e.g. "2 + - 2") or invalid (e.g. "2 - /")
 const hasConsecutiveOperators = (string: string): boolean => {
   for (let i = 0; i < string.length; i++) {
     const current = string[i];
@@ -80,6 +82,17 @@ const generateTokenForExpression = (string: string): Array<Token> => {
       : Number(numberAccumulator),
   });
 
+  /*
+   IF current is a number or "."
+   ELSE IF current is "-" sign and is the first element
+   ELSE IF current is an operator
+     IF numberAccumulator is empty
+     IF current is "-" and the element before it was an operator
+     ELSE current is just an operator
+   ELSE IF current is "("
+   ELSE IF current is a number or ")"
+   */
+
   const addNumberToken = (token: NumberToken) => {
     tokenArray.push(token);
     numberAccumulator = '';
@@ -112,7 +125,7 @@ const generateTokenForExpression = (string: string): Array<Token> => {
         type: 'OpeningParenthesis',
         value: '(',
       });
-    } else if (isNumber(current) || current === ')') {
+    } else {
       const token = generateNumberToken(numberAccumulator);
       addNumberToken(token);
       tokenArray.push({
@@ -140,55 +153,73 @@ const transformTokensToReversePolishNotation = (
   for (let i = 0; i < tokenArray.length; i++) {
     const currentElement = tokenArray[i];
 
-    if (currentElement.type === 'NumberToken') {
-      output.push(currentElement);
-    } else if (currentElement.type === 'BinaryOperationToken') {
-      if (stack.length === 0) {
-        stack.push(currentElement);
-        continue;
+    switch (currentElement.type) {
+      case 'NumberToken': {
+        output.push(currentElement);
+        break;
       }
-
-      const currentPrecedence = operatorPrecedence[currentElement.operation];
-      const previousOperator = stack[stack.length - 1];
-
-      if (previousOperator.type !== 'BinaryOperationToken') {
-        stack.push(currentElement);
-        continue;
-      }
-
-      const previousPrecedence = operatorPrecedence[previousOperator.operation];
-
-      if (currentPrecedence > previousPrecedence) {
-        stack.push(currentElement);
-      } else {
-        while (
-          stack.length &&
-          stack[stack.length - 1].type !== 'OpeningParenthesis'
-        ) {
-          const element = stack.pop();
-          // @ts-expect-error Given the above, we know for sure that this is not an opening parenthesis.
-          output.push(element);
+      case 'BinaryOperationToken': {
+        currentElement;
+        if (stack.length === 0) {
+          stack.push(currentElement);
+          continue;
         }
+
+        const currentPrecedence = operatorPrecedence[currentElement.operation];
+        const previousOperator = stack[stack.length - 1];
+
+        if (previousOperator.type !== 'BinaryOperationToken') {
+          stack.push(currentElement);
+          continue;
+        }
+
+        const previousPrecedence =
+          operatorPrecedence[previousOperator.operation];
+
+        if (currentPrecedence > previousPrecedence) {
+          stack.push(currentElement);
+        } else {
+          while (
+            stack.length &&
+            stack[stack.length - 1].type !== 'OpeningParenthesis'
+          ) {
+            const element = stack.pop();
+            // @ts-expect-error Given the above, we know for sure that this is not an opening parenthesis.
+            output.push(element);
+          }
+          stack.push(currentElement);
+        }
+        break;
+      }
+      case 'OpeningParenthesis': {
         stack.push(currentElement);
+        break;
       }
-    } else if (currentElement.type === 'OpeningParenthesis') {
-      stack.push(currentElement);
-    } else {
-      let removedElement = stack.pop();
+      case 'ClosingParenthesis': {
+        let removedElement = stack.pop();
 
-      if (!removedElement) {
-        throw new Error('Invalid parentheses');
-      }
+        if (!removedElement) {
+          throw new Error('Invalid parentheses');
+        }
 
-      while (removedElement.type !== 'OpeningParenthesis') {
-        output.push(removedElement);
-        removedElement = stack.pop();
+        while (removedElement.type !== 'OpeningParenthesis') {
+          output.push(removedElement);
+          removedElement = stack.pop();
+        }
+        break;
       }
     }
   }
-  const stackLength = stack.length;
-  for (let j = 0; j < stackLength; j++) {
+
+  while (
+    stack.length &&
+    stack[stack.length - 1].type !== 'OpeningParenthesis'
+  ) {
     const element = stack.pop();
+    // Given the above condition, we know that the element is an opening
+    // parenthesis, but TypeScript is not aware. The following condition exists
+    // solely for TypeScript to be aware.
+    /* istanbul ignore next */
     if (element.type !== 'OpeningParenthesis') {
       output.push(element);
     }

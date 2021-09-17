@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "noEmit": true,
-    "target": "es6",
+    "target": "ES5",
     "moduleResolution": "node",
-    "sourceMap": true
+    "sourceMap": true,
+    "outDir": "./bin",
+    "rootDir": "./src"
   },
   "includes": ["./src"]
 }

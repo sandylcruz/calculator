@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+
+const calculate = require("./bin").default;
+
+const [equation] = process.argv.slice(2);
+
+if (!equation) {
+  throw new Error("Expected equation, but one was not found.");
+};
+
+console.log(calculate(equation));
