@@ -82,17 +82,6 @@ const generateTokenForExpression = (string: string): Array<Token> => {
       : Number(numberAccumulator),
   });
 
-  /*
-   IF current is a number or "."
-   ELSE IF current is "-" sign and is the first element
-   ELSE IF current is an operator
-     IF numberAccumulator is empty
-     IF current is "-" and the element before it was an operator
-     ELSE current is just an operator
-   ELSE IF current is "("
-   ELSE IF current is a number or ")"
-   */
-
   const addNumberToken = (token: NumberToken) => {
     tokenArray.push(token);
     numberAccumulator = '';
@@ -102,6 +91,17 @@ const generateTokenForExpression = (string: string): Array<Token> => {
   for (let i = 0; i < trimmedString.length; i++) {
     const current = trimmedString[i];
     const previous = trimmedString[i - 1];
+
+    /*
+    IF current is a number or "."
+    ELSE IF current is "-" sign and is the first element
+    ELSE IF current is an operator
+      IF numberAccumulator is empty
+      IF current is "-" and the element before it was an operator
+      ELSE current is just an operator
+    ELSE IF current is "("
+    ELSE IF current is a number or ")"
+    */
 
     if (isNumber(current) || current === '.') {
       numberAccumulator += current;
